@@ -39,7 +39,7 @@ bool SatisfySampleConstraint(const NormalizedBBox& sampled_bbox,
     const NormalizedBBox& object_bbox = object_bboxes[i];
     // Test jaccard overlap.
     if (has_jaccard_overlap) {
-      const float jaccard_overlap = JaccardOverlap(sampled_bbox, object_bbox);
+      const float jaccard_overlap = JaccardOverlap(sampled_bbox, object_bbox); // This is just IoU
       if (sample_constraint.has_min_jaccard_overlap() &&
           jaccard_overlap < sample_constraint.min_jaccard_overlap()) {
         continue;
@@ -114,10 +114,10 @@ void SampleBBox(const Sampler& sampler, NormalizedBBox* sampled_bbox) {
   sampled_bbox->set_ymax(h_off + bbox_height);
 }
 
-void GenerateSamples(const NormalizedBBox& source_bbox,
-                     const vector<NormalizedBBox>& object_bboxes,
-                     const BatchSampler& batch_sampler,
-                     vector<NormalizedBBox>* sampled_bboxes) {
+void GenerateSamples(const NormalizedBBox& source_bbox, // a normalized box [0 0 1 1]
+                     const vector<NormalizedBBox>& object_bboxes, // ground truth boxes
+                     const BatchSampler& batch_sampler, // stored scale, aspect infor, jaccard_overlap
+                     vector<NormalizedBBox>* sampled_bboxes) { // proposal boxes, only stores positive samples by sample_constraint
   int found = 0;
   for (int i = 0; i < batch_sampler.max_trials(); ++i) {
     if (batch_sampler.has_max_sample() &&
@@ -126,10 +126,10 @@ void GenerateSamples(const NormalizedBBox& source_bbox,
     }
     // Generate sampled_bbox in the normalized space [0, 1].
     NormalizedBBox sampled_bbox;
-    SampleBBox(batch_sampler.sampler(), &sampled_bbox);
+    SampleBBox(batch_sampler.sampler(), &sampled_bbox); // Generate a box randomly by scale and aspect_ratio range, position is also random
     // Transform the sampled_bbox w.r.t. source_bbox.
-    LocateBBox(source_bbox, sampled_bbox, &sampled_bbox);
-    // Determine if the sampled bbox is positive or negative by the constraint.
+    LocateBBox(source_bbox, sampled_bbox, &sampled_bbox); // sampled_bbox firstly is normalized in [0 0 1 1] and LocateBBox sets it in specified range(source_bbox)
+    // Determine if the sampled bbox is positive or negative by the constraint. 
     if (SatisfySampleConstraint(sampled_bbox, object_bboxes,
                                 batch_sampler.sample_constraint())) {
       ++found;

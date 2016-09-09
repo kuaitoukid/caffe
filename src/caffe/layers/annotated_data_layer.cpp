@@ -131,12 +131,12 @@ void AnnotatedDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     read_time += timer.MicroSeconds();
     timer.Start();
     AnnotatedDatum sampled_datum;
-    if (batch_samplers_.size() > 0) {
+    if (batch_samplers_.size() > 0) { // We first dont use this batch_sampler, because we already crop good examples
       // Generate sampled bboxes from anno_datum.
       vector<NormalizedBBox> sampled_bboxes;
       GenerateBatchSamples(anno_datum, batch_samplers_, &sampled_bboxes);
       if (sampled_bboxes.size() > 0) {
-        // Randomly pick a sampled bbox and crop the anno_datum.
+        // Randomly pick a sampled bbox and crop the anno_datum. -> This is just the RoI sampling in Densebox
         int rand_idx = caffe_rng_rand() % sampled_bboxes.size();
         this->data_transformer_->CropImage(anno_datum, sampled_bboxes[rand_idx],
                                            &sampled_datum);
@@ -151,7 +151,7 @@ void AnnotatedDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     this->transformed_data_.set_cpu_data(top_data + offset);
     vector<AnnotationGroup> transformed_anno_vec;
     if (this->output_labels_) {
-      if (has_anno_type_) {
+      if (has_anno_type_) { // false
         // Make sure all data have same annotation type.
         CHECK(sampled_datum.has_type()) << "Some datum misses AnnotationType.";
         CHECK_EQ(anno_type_, sampled_datum.type()) <<
@@ -186,7 +186,7 @@ void AnnotatedDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     reader_.free().push(const_cast<AnnotatedDatum*>(&anno_datum));
   }
 
-  // Store "rich" annotation if needed.
+  // Store "rich" annotation if needed. -> We wont get into this if
   if (this->output_labels_ && has_anno_type_) {
     vector<int> label_shape(4);
     if (anno_type_ == AnnotatedDatum_AnnotationType_BBOX) {

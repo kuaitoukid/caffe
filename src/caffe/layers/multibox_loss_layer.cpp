@@ -22,12 +22,12 @@ void MultiBoxLossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       this->layer_param_.multibox_loss_param();
 
   num_ = bottom[0]->num();
-  num_priors_ = bottom[2]->height() / 4;
+  num_priors_ = bottom[2]->height() / 4; // 4 should be modified into 8 for 4-corner regression
   // Get other parameters.
   CHECK(multibox_loss_param.has_num_classes()) << "Must provide num_classes.";
   num_classes_ = multibox_loss_param.num_classes();
   CHECK_GE(num_classes_, 1) << "num_classes should not be less than 1.";
-  share_location_ = multibox_loss_param.share_location();
+  share_location_ = multibox_loss_param.share_location(); // whether bounding box are shared among different classes
   loc_classes_ = share_location_ ? 1 : num_classes_;
   match_type_ = multibox_loss_param.match_type();
   overlap_threshold_ = multibox_loss_param.overlap_threshold();
@@ -37,9 +37,9 @@ void MultiBoxLossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   do_neg_mining_ = multibox_loss_param.do_neg_mining();
   neg_pos_ratio_ = multibox_loss_param.neg_pos_ratio();
   neg_overlap_ = multibox_loss_param.neg_overlap();
-  code_type_ = multibox_loss_param.code_type();
-  encode_variance_in_target_ = multibox_loss_param.encode_variance_in_target();
-  map_object_to_agnostic_ = multibox_loss_param.map_object_to_agnostic();
+  code_type_ = multibox_loss_param.code_type(); // Corner or Center
+  encode_variance_in_target_ = multibox_loss_param.encode_variance_in_target(); // default false, whether consider variance
+  map_object_to_agnostic_ = multibox_loss_param.map_object_to_agnostic(); // default false, this is for multibox, and can be true in text detection
   if (map_object_to_agnostic_) {
     if (background_label_id_ >= 0) {
       CHECK_EQ(num_classes_, 2);
@@ -246,8 +246,7 @@ void MultiBoxLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       }
     }
     // Record matching statistics.
-    for (map<int, vector<int> >::iterator it = match_indices.begin();
-         it != match_indices.end(); ++it) {
+    for (map<int, vector<int> >::iterator it = match_indices.begin(); it != match_indices.end(); ++it) {
       const int label = it->first;
       // Get positive indices.
       int num_pos = 0;
@@ -286,7 +285,7 @@ void MultiBoxLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     // Form data to pass on to loc_loss_layer_.
     vector<int> loc_shape(2);
     loc_shape[0] = 1;
-    loc_shape[1] = num_matches_ * 4;
+    loc_shape[1] = num_matches_ * 4; // should * 8 for 4-corner
     loc_pred_.Reshape(loc_shape);
     loc_gt_.Reshape(loc_shape);
     Dtype* loc_pred_data = loc_pred_.mutable_cpu_data();
@@ -318,7 +317,7 @@ void MultiBoxLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           CHECK_LT(j, prior_bboxes.size());
           EncodeBBox(prior_bboxes[j], prior_variances[j], code_type_,
                      encode_variance_in_target_, gt_bbox, &gt_encode);
-          loc_gt_data[count * 4] = gt_encode.xmin();
+          loc_gt_data[count * 4 + 0] = gt_encode.xmin();
           loc_gt_data[count * 4 + 1] = gt_encode.ymin();
           loc_gt_data[count * 4 + 2] = gt_encode.xmax();
           loc_gt_data[count * 4 + 3] = gt_encode.ymax();

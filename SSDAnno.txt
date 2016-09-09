@@ -1,0 +1,18 @@
+1. AnnoDataLayer其实可以非常简单，就是生成图像跟对应的BoundingBoxes，
+    只不过SSD做了类似RoI Sampling的操作，这个对于8点回归有些不适用，因为如何截取，截取后Ground Truth如何修改都很难做
+    里面的aspect ratio跟anchor一点关系也没有
+2. SSD自带的Demo每个featuremap pixel只预测3 or 6个bounding box，但是考虑了multi-level-feature，尺度问题就不用考虑了
+3. Permutation的作用：比如每个像素点预测6个bounding boxes，那么最开始layer dimension为[num 24 h w]，经过permutation为[num h w 24]，这样后面展开的时候就是按照left, top, right, bottom展开了
+    不然的话，是按照left left ... top top ... right right ... bottom bottom ... 这样的形式展开
+4. Flatten顾名思义，从Permutation的分析也能知道干什么的，具体代码也非常简单明了
+5. PriorBox是跟Anchor相关的层
+    hpp中注释写到Generate the prior boxes of designated sizes and aspect ratios across all dimensions, Intended for use with MultiBox detection method to generate prior (template).
+    也就是说可以一并用到MultiBox中来
+   variance_的作用
+   max_size_感觉有点怪怪的，只在1:1的PriorBox中有用到
+   min_size_的设定很关键，跟感受野大小有关系
+6. 
+    
+    
+    
+    

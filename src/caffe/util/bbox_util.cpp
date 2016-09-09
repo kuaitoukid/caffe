@@ -439,7 +439,7 @@ void MatchBBox(const vector<NormalizedBBox>& gt_bboxes,
       }
       for (int p = 0; p < gt_pool.size(); ++p) {
         int j = gt_pool[p];
-        if (it->second.find(j) == it->second.end()) {
+        if (it->second.find(j) == it->second.end()) { // find the overlaped ground truth that is index_j
           // No overlap between the i-th prediction and j-th ground truth.
           continue;
         }
@@ -471,8 +471,7 @@ void MatchBBox(const vector<NormalizedBBox>& gt_bboxes,
       break;
     case MultiBoxLossParameter_MatchType_PER_PREDICTION:
       // Get most overlaped for the rest prediction bboxes.
-      for (map<int, map<int, float> >::iterator it = overlaps.begin();
-           it != overlaps.end(); ++it) {
+      for (map<int, map<int, float> >::iterator it = overlaps.begin(); it != overlaps.end(); ++it) {
         int i = it->first;
         if ((*match_indices)[i] != -1) {
           // The prediction already have matched ground truth.
@@ -601,7 +600,7 @@ void GetLocPredictions(const Dtype* loc_data, const int num,
   for (int i = 0; i < num; ++i) {
     LabelBBox& label_bbox = (*loc_preds)[i];
     for (int p = 0; p < num_preds_per_class; ++p) {
-      int start_idx = p * num_loc_classes * 4;
+      int start_idx = p * num_loc_classes * 4; // should be 8 if 4-corner regression
       for (int c = 0; c < num_loc_classes; ++c) {
         int label = share_location ? -1 : c;
         if (label_bbox.find(label) == label_bbox.end()) {
@@ -745,7 +744,7 @@ void GetPriorBBoxes(const Dtype* prior_data, const int num_priors,
     bbox.set_ymin(prior_data[start_idx + 1]);
     bbox.set_xmax(prior_data[start_idx + 2]);
     bbox.set_ymax(prior_data[start_idx + 3]);
-    float bbox_size = BBoxSize(bbox);
+    float bbox_size = BBoxSizeBBoxSize(bbox);
     bbox.set_size(bbox_size);
     prior_bboxes->push_back(bbox);
   }

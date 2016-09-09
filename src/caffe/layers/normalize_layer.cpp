@@ -3,6 +3,7 @@
 #include "caffe/filler.hpp"
 #include "caffe/layers/normalize_layer.hpp"
 
+// Normalizes the input to have L_p norm of 1 with scale learnable.
 namespace caffe {
 
 template <typename Dtype>

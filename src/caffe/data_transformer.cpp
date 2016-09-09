@@ -391,7 +391,7 @@ void DataTransformer<Dtype>::CropImage(const Datum& datum,
 template<typename Dtype>
 void DataTransformer<Dtype>::CropImage(const AnnotatedDatum& anno_datum,
                                        const NormalizedBBox& bbox,
-                                       AnnotatedDatum* cropped_anno_datum) {
+                                       AnnotatedDatum* cropped_anno_datum) { // Stored valid boxes after RoI sampling
   // Crop the datum.
   CropImage(anno_datum.datum(), bbox, cropped_anno_datum->mutable_datum());
   cropped_anno_datum->set_type(anno_datum.type());
